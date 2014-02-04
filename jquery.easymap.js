@@ -2,61 +2,92 @@
 **********************************************************
 EasyMap.js | takes the pain and time out of working with Google Maps
 
-Version:		v1.0
-Release:		January 29, 2014
+Version:		v1.1
+Release:		February 04, 2014
 Site:			http://mike-zarandona.github.io/EasyMap.js
 Author:			Mike Zarandona | http://mikezarandona.com | @mikezarandona
 
 Requirements:	jQuery, <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
 
-Usage:			On document ready:
+Usage:
 
-				$('#map').easyMap({
-					mapCenter:					[33.748995, -84.387982],
-					zoom:						11,
+	$('#map').easyMap({
+		locationData: [
+			{
+				"name": "Location 1",
+				"latLng": [34.010974, -84.579449],
+				"address": "123 Fake Street, Anytown AB 01234",
+				"content": "Location 1 description"
+			},
+			{
+				"name": "Location 2",
+				"latLng": [33.790383, -84.286035],
+				"address": "234 Fake Avenue, Anycity BC 12345",
+				"content": "Location 2 description"
+			}
+		],
 
-					locationData: [
-						{
-							"name": "Location 1",
-							"latLng": [34.010974, -84.579449],
-							"content": "Location 1 description."
-						},
-						{
-							"name": "Location 2",
-							"latLng": [33.790383, -84.286035],
-							"content": "Location 2 description."
-						}
-					],
+		mapCenter: [33.748995, -84.387982],
+		zoom: 11,
 
-					snazzyMapsStyles:			[...],
+		snazzyMapsStyles: [],
 
-					scrollwheel: 				false,
-					disableDefaultUI: 			true,
-					disableDoubleClickZoom: 	true,
-					draggable: 					false,
+		scrollwheel: false,
+		disableDefaultUI: true,
+		disableDoubleClickZoom: true,
+		draggable: false,
 
-					markerIcon:					'/sites/somesitecom/exceptions/stylesheets/images/map-pin.png'
-				});
+		selectElement: '',
+		enableLinks: false,
+
+		markerIcon: '/path/to/marker-icon@2x.png',
+		markerIconSize: [40, 65]
+	});
 
 **********************************************************
 */
 
-(function ($, undefined) {
+var map;
+
+(function ($, undefined, map) {
 	$.fn.easyMap = function (options) {
 
-		// Override defaults with specified options.
+		/* Override defaults with specified options. */
 		options = $.extend({}, $.fn.easyMap.options, options);
 
 		/* Options loaded; run-once items */
 
-		// Future Plans: Asynchronously load the Google Maps API
-		// var googleScript = document.createElement('script');
-		// googleScript.src = "https://maps.googleapis.com/maps/api/js?sensor=false";
-		// document.body.appendChild(googleScript);
+		/* Select interactions */
+		if ( options.selectElement !== '' ) {
+			$(options.selectElement).on('change', function() {
+				var index = $(this)[0].selectedIndex;
+				easyMapMarker(index);
+			});
+		}
 
 
+		/* Link interactions */
+		if (options.enableLinks) {
+			for (var j = 0; j < options.locationData.length; j++) {
+				$('[data-easymap-marker="' + j + '"]').on('click', function() {
+					easyMapMarker(j);
+				});
+			}
+		}
 
-		// The Loop
+
+		/* Helper function to pan to markers/positions on the created map element(s) */
+		function easyMapMarker(index) {
+			if (index == 0) {
+				map.panTo( new google.maps.LatLng(options.mapCenter[0], options.mapCenter[1]) );
+			}
+			else if (index <= options.locationData.length) {
+				map.panTo( new google.maps.LatLng(options.locationData[(index-1)].latLng[0], options.locationData[(index-1)].latLng[1]) );
+			}
+		}
+
+
+		/* Build the map(s) */
 		return this.each(function () {
 
 			// Initialize the map
@@ -79,57 +110,76 @@ Usage:			On document ready:
 			};
 
 
+			// Get the map element
 			var mapElement = document.getElementById('map');
 
 			// Create the Google Map with already defined options
-			var map = new google.maps.Map(mapElement, mapOptions);
+			map = new google.maps.Map(mapElement, mapOptions);
 
 			// Create the infoWindow object
 			var infoWindow = new google.maps.InfoWindow(), marker, i;
+
+			// Create new position object
+			var position;
+
+			// New array to hold the marker objects
+			var markersList = [];
 
 
 			// The Loop
 			for (var i = 0; i < options.locationData.length; i++) {
 
-				var position = new google.maps.LatLng( options.locationData[i].latLng[0], options.locationData[i].latLng[1] );
+				position = new google.maps.LatLng( options.locationData[i].latLng[0], options.locationData[i].latLng[1] );
 
 				// Set the markers, based on if they have a custom marker or not
 				if (options.markerIcon !== '') {
-					marker = new google.maps.Marker({
+					var markerIconBuild = 'new google.maps.MarkerImage(' + options.markerIcon + ', null, null, null, new google.maps.Size(' + options.markerIconSize[0] + ',' + options.markerIconSize[1] + '))';
+
+					var marker = new google.maps.Marker({
 						position: position,
-						icon: options.markerIcon,
+						icon: markerIconBuild,
 						map: map
 					});
 				}
 				else {
-					marker = new google.maps.Marker({
+					var marker = new google.maps.Marker({
 						position: position,
 						map: map
 					});
 				}
-				
+
+				// Store this marker into markersList[]
+				markersList[i] = marker;
+
 				// Allow each marker to have an info window    
 				google.maps.event.addListener(marker, 'click', (function(marker, i) {
 					return function() {
-						infoWindow.setContent( '<h2>' + options.locationData[i].name + '</h2><p>' + options.locationData[i].content + '</p>' );
+						var contentBuild = '<h2>' + options.locationData[i].name + '</h2><p>' + options.locationData[i].content + '</p>';
+
+						if (options.locationData[i].address !== undefined) {
+							contentBuild += '<p><a href="https://www.google.com/maps/preview?daddr=' + options.locationData[i].address + '" target="_blank">Directions</a></p>';
+						}
+
+						infoWindow.setContent( contentBuild );
 						infoWindow.open(map, marker);
 						map.panTo(marker.position);
 					};
 				})(marker, i));
 			}
-
 		});
-
 	};
+
+
 
 
 
 	// Default the defaults
 	$.fn.easyMap.options = {
+		locationData: 					[],
+
 		mapCenter:						[33.748995, -84.387982],
 		zoom:							11,
 
-		locationData: 					[],
 		snazzyMapsStyles:				[],
 
 		scrollwheel:					false,
@@ -137,7 +187,10 @@ Usage:			On document ready:
 		disableDoubleClickZoom:			false,
 		draggable:						true,
 
-		markerIcon:						''
-	};
+		selectElement:					'',
+		enableLinks:					false,
 
+		markerIcon:						'',
+		markerIconSize: 				[]
+	};
 })(jQuery);
