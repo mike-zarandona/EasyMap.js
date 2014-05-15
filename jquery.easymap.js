@@ -2,8 +2,8 @@
 **********************************************************
 EasyMap.js | takes the pain and time out of working with Google Maps
 
-Version:		v1.1
-Release:		February 04, 2014
+Version:		v1.1.1
+Release:		May 15, 2014
 Site:			http://mike-zarandona.github.io/EasyMap.js
 Author:			Mike Zarandona | http://mikezarandona.com | @mikezarandona
 
@@ -111,7 +111,7 @@ var map;
 
 
 			// Get the map element
-			var mapElement = document.getElementById('map');
+			var mapElement = document.getElementById( $(this).attr('id') );
 
 			// Create the Google Map with already defined options
 			map = new google.maps.Map(mapElement, mapOptions);
