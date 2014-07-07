@@ -2,8 +2,8 @@
 **********************************************************
 EasyMap.js | takes the pain and time out of working with Google Maps
 
-Version:		v1.1.1
-Release:		May 15, 2014
+Version:		v1.1.2
+Release:		July 7, 2014
 Site:			http://mike-zarandona.github.io/EasyMap.js
 Author:			Mike Zarandona | http://mikezarandona.com | @mikezarandona
 
@@ -47,7 +47,8 @@ Usage:
 **********************************************************
 */
 
-var map;
+var map,
+	markers;
 
 (function ($, undefined, map) {
 	$.fn.easyMap = function (options) {
@@ -66,29 +67,8 @@ var map;
 		}
 
 
-		/* Link interactions */
-		if (options.enableLinks) {
-			for (var j = 0; j < options.locationData.length; j++) {
-				$('[data-easymap-marker="' + j + '"]').on('click', function() {
-					easyMapMarker(j);
-				});
-			}
-		}
-
-
-		/* Helper function to pan to markers/positions on the created map element(s) */
-		function easyMapMarker(index) {
-			if (index == 0) {
-				map.panTo( new google.maps.LatLng(options.mapCenter[0], options.mapCenter[1]) );
-			}
-			else if (index <= options.locationData.length) {
-				map.panTo( new google.maps.LatLng(options.locationData[(index-1)].latLng[0], options.locationData[(index-1)].latLng[1]) );
-			}
-		}
-
-
 		/* Build the map(s) */
-		return this.each(function () {
+		this.each(function () {
 
 			// Initialize the map
 			var mapOptions = {
@@ -123,7 +103,7 @@ var map;
 			var position;
 
 			// New array to hold the marker objects
-			var markersList = [];
+			markers = [];
 
 
 			// The Loop
@@ -135,21 +115,20 @@ var map;
 				if (options.markerIcon !== '') {
 					var markerIconBuild = 'new google.maps.MarkerImage(' + options.markerIcon + ', null, null, null, new google.maps.Size(' + options.markerIconSize[0] + ',' + options.markerIconSize[1] + '))';
 
-					var marker = new google.maps.Marker({
+					markers[i] = new google.maps.Marker({
 						position: position,
 						icon: markerIconBuild,
 						map: map
 					});
 				}
 				else {
-					var marker = new google.maps.Marker({
+					markers[i] = new google.maps.Marker({
 						position: position,
 						map: map
 					});
 				}
 
-				// Store this marker into markersList[]
-				markersList[i] = marker;
+				marker = markers[i];
 
 				// Allow each marker to have an info window    
 				google.maps.event.addListener(marker, 'click', (function(marker, i) {
@@ -161,12 +140,33 @@ var map;
 						}
 
 						infoWindow.setContent( contentBuild );
-						infoWindow.open(map, marker);
+						infoWindow.open(map, markers[i]);
 						map.panTo(marker.position);
 					};
 				})(marker, i));
 			}
 		});
+
+
+
+		/* Link interactions */
+		if (options.enableLinks) {
+			$('.easymap').on('click', function() {
+				google.maps.event.trigger(markers[$(this).attr('data-easymap-marker')-1], 'click');
+			});
+		}
+
+
+
+		/* Helper function to pan to markers/positions on the created map element(s) */
+		function easyMapMarker(index) {
+			if (index === 0) {
+				map.panTo( new google.maps.LatLng(options.mapCenter[0], options.mapCenter[1]) );
+			}
+			else if (index <= options.locationData.length) {
+				map.panTo( new google.maps.LatLng(options.locationData[(index-1)].latLng[0], options.locationData[(index-1)].latLng[1]) );
+			}
+		}
 	};
 
 
