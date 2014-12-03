@@ -99,6 +99,4 @@ v1.1 - February 04, 2014
 
 
 ## Author
-Mike Zarandona • [http://mikezarandona.com](http://mikezarandona.com) • [@mikezarandona](http://twitter.com/mikezarandona)
-
-I make awesome things at [DynamiX Web Design](http://dynamixwd.com).
+Mike Zarandona • [http://mike.zarandona.com](http://mike.zarandona.com) • [@mikezarandona](http://twitter.com/mikezarandona)
